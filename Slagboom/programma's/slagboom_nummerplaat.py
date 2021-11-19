@@ -60,21 +60,30 @@ def meetAfstand(inOfUitgang):
 
 # nummerplaat scannen
 def scanNummerplaat():
-    ret, frame, image = cam.read()
-    img_counter=0
-    key = cv2.waitKey(1) & 0xFF
+    i = 0
+    while i < 1:
+        
+        
+        ret, frame = cam.read()
+        
+        image=cam.read()
+        img_counter=0
+        key = cv2.waitKey(1) & 0xFF
     
-    if not ret:
-        print("failed to grab frame")
-        break
-
-    img_name = "opencv_frame_{}.png".format(img_counter)
-    cv2.imwrite(img_name, frame)
-    img=Image.open(r'/home/pi/opencv_frame_{}.png'.format(img_counter))
-    text = pytesseract.image_to_string(img)
-    print(text)
-    cv2.waitKey(0)
-    img_counter += 1
+        if not ret:
+            return "failed to grab frame"
+            
+        img_name = "opencv_frame_{}.png".format(img_counter)
+        cv2.imwrite(img_name, frame)
+        img=Image.open(r'/home/pi/opencv_frame_{}.png'.format(img_counter))
+        time.sleep(0.1)
+        text = pytesseract.image_to_string(img)
+        print("cam.read()")
+        print(text)
+        #cv2.waitKey(0)
+        img_counter += 1
+        i+=1
+    
     return text
     
 try:
