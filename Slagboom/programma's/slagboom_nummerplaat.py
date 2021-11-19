@@ -8,6 +8,8 @@ import cv2
 import pytesseract
 from PIL import Image
 import MySQLdb
+from datetime import datetime
+
 
 #initialize database variable
 nummerplaat = 0
@@ -99,14 +101,16 @@ def scanNummerplaat():
     
 try:
     while True:
-        nummerplaat = (scanNummerplaat())
-        #wegscrhijven naar db
-        cursor.execute("INSERT INTO nrplaat(nummerplaat) VALUE(%s)", (nummerplaat))
-        database.commit()
         #ingang parking
         if(meetAfstand("ingang") < afstandauto):# er staat auto ingang  
             if(legeparkings > 0):# er is een plaats vrij
-                print(scanNummerplaat())# nummerplaat scannen
+                tijdstip=datetime.now()
+                nummerplaat=scanNummerplaat()
+                print(nummerplaat)# nummerplaat scannen
+                #wegscrhijven naar db
+                cursor.execute("INSERT INTO nrplaat(tijdstip,nummerplaat) VALUE(%s, %s)", (tijdstip,nummerplaat))
+                database.commit()
+
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
                 while (meetAfstand("ingang") < 10 or meetAfstand("uitgang") < 10):# staat de auto er nog ?
