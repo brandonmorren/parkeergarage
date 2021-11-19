@@ -7,6 +7,16 @@ import time
 import cv2
 import pytesseract
 from PIL import Image
+import MySQLdb
+
+#initialize database variable
+nummerplaat = 0
+
+#verbinden met database
+database = MySQLdb.connect(host="localhost", user="pi", passwd="raspberry", db="parkeergarage")
+
+#database select
+cursor = database.cursor()
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(17, GPIO.OUT)# pin1 voor ultrasoon sensor ingang
@@ -33,6 +43,7 @@ parking1Vol = 0
 parking2Vol = 0
 parking3Vol = 0
 parking4Vol = 0
+afstandauto = 15
 
 # camera nummerplaat herkenning instellen
 cam = cv2.VideoCapture(0)
@@ -60,27 +71,40 @@ def meetAfstand(inOfUitgang):
 
 # nummerplaat scannen
 def scanNummerplaat():
-    ret, frame, image = cam.read()
-    img_counter=0
-    key = cv2.waitKey(1) & 0xFF
+    i = 0
+    while i < 1:
+        
+        
+        ret, frame = cam.read()
+        
+        image=cam.read()
+        img_counter=0
+        key = cv2.waitKey(1) & 0xFF
     
-    if not ret:
-        print("failed to grab frame")
-        break
-
-    img_name = "opencv_frame_{}.png".format(img_counter)
-    cv2.imwrite(img_name, frame)
-    img=Image.open(r'/home/pi/opencv_frame_{}.png'.format(img_counter))
-    text = pytesseract.image_to_string(img)
-    print(text)
-    cv2.waitKey(0)
-    img_counter += 1
+        if not ret:
+            return "failed to grab frame"
+            
+        img_name = "opencv_frame_{}.png".format(img_counter)
+        cv2.imwrite(img_name, frame)
+        img=Image.open(r'/home/pi/opencv_frame_{}.png'.format(img_counter))
+        time.sleep(0.1)
+        text = pytesseract.image_to_string(img)
+        print("cam.read()")
+        print(text)
+        #cv2.waitKey(0)
+        img_counter += 1
+        i+=1
+    
     return text
     
 try:
     while True:
+        nummerplaat = (scanNummerplaat())
+        #wegscrhijven naar db
+        cursor.execute("INSERT INTO nrplaat(nummerplaat) VALUE(%s)", (nummerplaat))
+        database.commit()
         #ingang parking
-        if(meetAfstand("ingang") < 10):# er staat auto ingang  
+        if(meetAfstand("ingang") < afstandauto):# er staat auto ingang  
             if(legeparkings > 0):# er is een plaats vrij
                 print(scanNummerplaat())# nummerplaat scannen
                 servo.ChangeDutyCycle(6.5)# slagboom open
@@ -97,12 +121,12 @@ try:
                 GPIO.output(18, 0)# auto weg -> led uit
         
         #uitgang parking
-        if(meetAfstand("uitgang") < 10):# auto aan uitgang
+        if(meetAfstand("uitgang") < afstandauto):# auto aan uitgang
             print(scanNummerplaat())# nummerplaat scannen
             if(ticketbetaald == 1):# hij heeft betaald
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
-                while (meetAfstand("uitgang") < 10 or meetAfstand("ingang") < 10):# staat de auto er nog ?
+                while (meetAfstand("uitgang") < afstandauto or meetAfstand("ingang") < afstandauto):# staat de auto er nog ?
                     time.sleep(4)
                 servo.ChangeDutyCycle(11)# auto weg -> slagboom dicht
                 print('slagboom dicht')
