@@ -33,6 +33,7 @@ parking1Vol = 0
 parking2Vol = 0
 parking3Vol = 0
 parking4Vol = 0
+afstandauto = 15
 
 # camera nummerplaat herkenning instellen
 cam = cv2.VideoCapture(0)
@@ -89,7 +90,7 @@ def scanNummerplaat():
 try:
     while True:
         #ingang parking
-        if(meetAfstand("ingang") < 10):# er staat auto ingang  
+        if(meetAfstand("ingang") < afstandauto):# er staat auto ingang  
             if(legeparkings > 0):# er is een plaats vrij
                 print(scanNummerplaat())# nummerplaat scannen
                 servo.ChangeDutyCycle(6.5)# slagboom open
@@ -106,12 +107,12 @@ try:
                 GPIO.output(18, 0)# auto weg -> led uit
         
         #uitgang parking
-        if(meetAfstand("uitgang") < 10):# auto aan uitgang
+        if(meetAfstand("uitgang") < afstandauto):# auto aan uitgang
             print(scanNummerplaat())# nummerplaat scannen
             if(ticketbetaald == 1):# hij heeft betaald
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
-                while (meetAfstand("uitgang") < 10 or meetAfstand("ingang") < 10):# staat de auto er nog ?
+                while (meetAfstand("uitgang") < afstandauto or meetAfstand("ingang") < afstandauto):# staat de auto er nog ?
                     time.sleep(4)
                 servo.ChangeDutyCycle(11)# auto weg -> slagboom dicht
                 print('slagboom dicht')
