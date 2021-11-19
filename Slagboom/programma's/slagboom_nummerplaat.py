@@ -58,6 +58,7 @@ def meetAfstand(inOfUitgang):
     endtime = time.time()
     return round(((endtime - starttime)*17000),0)
 
+# nummerplaat scannen
 def scanNummerplaat():
     ret, frame, image = cam.read()
     img_counter=0
@@ -76,15 +77,12 @@ def scanNummerplaat():
     img_counter += 1
     return text
     
-   
- 
-
 try:
     while True:
         #ingang parking
         if(meetAfstand("ingang") < 10):# er staat auto ingang  
             if(legeparkings > 0):# er is een plaats vrij
-                scanNummerplaat()
+                print(scanNummerplaat())# nummerplaat scannen
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
                 while (meetAfstand("ingang") < 10 or meetAfstand("uitgang") < 10):# staat de auto er nog ?
@@ -100,7 +98,7 @@ try:
         
         #uitgang parking
         if(meetAfstand("uitgang") < 10):# auto aan uitgang
-            scanNummerplaat()
+            print(scanNummerplaat())# nummerplaat scannen
             if(ticketbetaald == 1):# hij heeft betaald
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
