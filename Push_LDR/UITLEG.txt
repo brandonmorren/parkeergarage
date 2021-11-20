@@ -1,0 +1,4 @@
+SIMPLEPUSH: installeer de app en je bent "ready to go". 
+https://simplepush.io/
+
+LDR setup -> zie klas voor "setup".
