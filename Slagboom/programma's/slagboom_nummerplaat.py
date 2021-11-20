@@ -6,9 +6,13 @@ import RPi.GPIO as GPIO
 import time
 import cv2
 import pytesseract
+import imutils
+import numpy as np
 from PIL import Image
 import MySQLdb
 from datetime import datetime
+
+
 
 
 #initialize database variable
@@ -32,6 +36,8 @@ GPIO.setup(16, GPIO.OUT)# led voor parking 4 bezet
 GPIO.setup(18, GPIO.OUT)# led voor parking vol
 GPIO.setup(5, GPIO.OUT)# pin voor slagboom motor
 
+
+
 # slagboom motor instellen
 servo = GPIO.PWM(5, 50)
 servo.start(2.5)
@@ -41,16 +47,19 @@ servo.ChangeDutyCycle(11)# slagboom dicht zetten
 legeparkings = 4 # lege parkings bijhouden
 ticketbetaald = 1 # is het parkingticket betaald -> 1
 
+
+
 parking1Vol = 0
 parking2Vol = 0
 parking3Vol = 0
 parking4Vol = 0
 afstandauto = 15
 
-# camera nummerplaat herkenning instellen
-cam = cv2.VideoCapture(0)
-cv2.namedWindow("test")
-img_counter = 0
+
+
+
+
+
 
 #afstand meten 
 def meetAfstand(inOfUitgang):
@@ -72,44 +81,95 @@ def meetAfstand(inOfUitgang):
     return round(((endtime - starttime)*17000),0)
 
 # nummerplaat scannen
+# camera nummerplaat herkenning instellen
+cam = cv2.VideoCapture(0)
+
 def scanNummerplaat():
+    
     i = 0
     while i < 1:
         
         
-        ret, frame = cam.read()
+        ret,frame=cam.read()
+        time.sleep(0.5)
         
-        image=cam.read()
-        img_counter=0
+        #defing a key listener
         key = cv2.waitKey(1) & 0xFF
-    
-        if not ret:
-            return "failed to grab frame"
+
+        img=frame
+        
+
+        img = cv2.resize(img, (600,400) )
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
+        gray = cv2.bilateralFilter(gray, 13, 15, 15) 
+
+        edged = cv2.Canny(gray, 30, 200) 
+        contours = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours = imutils.grab_contours(contours)
+        contours = sorted(contours, key = cv2.contourArea, reverse = True)[:10]
+        screenCnt = None
+
+        for c in contours:
             
-        img_name = "opencv_frame_{}.png".format(img_counter)
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.018 * peri, True)
+        
+            if len(approx) == 4:
+                screenCnt = approx
+                break
+
+        if screenCnt is None:
+            detected = 0
+            print ('No contour detected')
+        else:
+            detected = 1
+
+        if detected == 1:
+            cv2.drawContours(img, [screenCnt], -1, (0, 0, 255), 3)
+
+        mask = np.zeros(gray.shape,np.uint8)
+        new_image = cv2.drawContours(mask,[screenCnt],0,255,-1,)
+        new_image = cv2.bitwise_and(img,img,mask=mask)
+
+        (x, y) = np.where(mask == 255)
+        (topx, topy) = (np.min(x), np.min(y))
+        (bottomx, bottomy) = (np.max(x), np.max(y))
+        Cropped = gray[topx:bottomx+1, topy:bottomy+1]
+
+        text = pytesseract.image_to_string(Cropped, config='--psm 11')
+        print ('License Plate Recognition\n')
+        print('Detected license plate Number is:',text,'\n')
+        img = cv2.resize(img,(500,300))
+        Cropped = cv2.resize(Cropped,(400,200))
+        #cv2.imshow('car',img)
+        #cv2.imshow('Cropped',Cropped)
+        
+        #write image to storage
+        img_name = 'numberplate_image_{}.png'.format(tijdstip)
         cv2.imwrite(img_name, frame)
-        img=Image.open(r'/home/pi/opencv_frame_{}.png'.format(img_counter))
-        time.sleep(0.1)
-        text = pytesseract.image_to_string(img)
-        print("cam.read()")
-        print(text)
-        #cv2.waitKey(0)
-        img_counter += 1
-        i+=1
-    
+        
+        time.sleep(2)
+        i=i+1
     return text
     
 try:
     while True:
+        #[BUG] alles moet op de pi aangesloten zijn, anders hangt het programma vast bij if(meetAfstand("ingang") < afstandauto):
+        #[BUG] kan de nummerplaat waarde niet in de terminal tonen.
+        
         #ingang parking
-        if(meetAfstand("ingang") < afstandauto):# er staat auto ingang  
+        if(meetAfstand("ingang") < afstandauto):# er staat auto ingang
             if(legeparkings > 0):# er is een plaats vrij
                 tijdstip=datetime.now()
+                
+                #scan nummerplaat
                 nummerplaat=scanNummerplaat()
-                print(nummerplaat)# nummerplaat scannen
+                
                 #wegscrhijven naar db
                 cursor.execute("INSERT INTO nrplaat(tijdstip,nummerplaat) VALUE(%s, %s)", (tijdstip,nummerplaat))
                 database.commit()
+                print('nummerplaat is doorgestuurt naar database, [BUG] kan de nummerplaat waarde niet in de terminal tonen\n')
 
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
@@ -158,7 +218,7 @@ try:
         time.sleep(1)
         
 except KeyboardInterrupt:# stop programma -> proper afsluiten
-  servo.stop()
-  GPIO.cleanup()
-  cam.release()
-  cv2.destroyAllWindows()
+    
+    servo.stop()
+    GPIO.cleanup()
+    cv2.destroyAllWindows()
