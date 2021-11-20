@@ -18,7 +18,7 @@ img_counter = 0
 
 while True:
     #reading camera frames
-    ret, frame, image = cam.read()
+    ret, frame = cam.read()
     
     #defing a key listener
     key = cv2.waitKey(1) & 0xFF
