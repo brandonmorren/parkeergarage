@@ -12,9 +12,6 @@ from PIL import Image
 import MySQLdb
 from datetime import datetime
 
-
-
-
 #initialize database variable
 nummerplaat = 0
 
@@ -48,16 +45,12 @@ legeparkings = 4 # lege parkings bijhouden
 ticketbetaald = 1 # is het parkingticket betaald -> 1
 
 
-
+#variabelen
 parking1Vol = 0
 parking2Vol = 0
 parking3Vol = 0
 parking4Vol = 0
 afstandauto = 15
-
-
-
-
 
 
 
@@ -84,21 +77,16 @@ def meetAfstand(inOfUitgang):
 # camera nummerplaat herkenning instellen
 cam = cv2.VideoCapture(0)
 
-def scanNummerplaat():
-    
+def scanNummerplaat():  
+    #while loop om scannen evt te herhalen
     i = 0
     while i < 1:
-        
-        
+        #camera inlezen
         ret,frame=cam.read()
         time.sleep(0.5)
-        
-        #defing a key listener
-        key = cv2.waitKey(1) & 0xFF
-
         img=frame
         
-
+        #foto nummerplaat vorm herkennnen
         img = cv2.resize(img, (600,400) )
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) 
@@ -119,12 +107,14 @@ def scanNummerplaat():
                 screenCnt = approx
                 break
 
+        #als er geen nummerplaat is herkent
         if screenCnt is None:
             detected = 0
             print ('No contour detected')
         else:
             detected = 1
 
+        #nummerplaatcontouren tekeken
         if detected == 1:
             cv2.drawContours(img, [screenCnt], -1, (0, 0, 255), 3)
 
@@ -137,15 +127,17 @@ def scanNummerplaat():
         (bottomx, bottomy) = (np.max(x), np.max(y))
         Cropped = gray[topx:bottomx+1, topy:bottomy+1]
 
+        #tekst van nummerplaat herkennen
         text = pytesseract.image_to_string(Cropped, config='--psm 11')
         print ('License Plate Recognition\n')
         print('Detected license plate Number is:',text,'\n')
         img = cv2.resize(img,(500,300))
         Cropped = cv2.resize(Cropped,(400,200))
+        #foto's tonen om te debuggen:
         #cv2.imshow('car',img)
         #cv2.imshow('Cropped',Cropped)
         
-        #write image to storage
+        #foto schrijven naar opslag met tijdstip in de naam
         img_name = 'numberplate_image_{}.png'.format(tijdstip)
         cv2.imwrite(img_name, frame)
         
