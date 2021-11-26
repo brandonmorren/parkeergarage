@@ -5,22 +5,42 @@
 import RPi.GPIO as GPIO
 import time
 import cv2
+import busio
+import digitalio
+import board
 import pytesseract
 import imutils
 import numpy as np
 from PIL import Image
 import MySQLdb
 from datetime import datetime
+import adafruit_pcd8544
+from PIL import Image
+from PIL import ImageDraw
+from PIL import ImageFont
+from simplepush import send, send_encrypted
 
-#initialize database variable
-nummerplaat = 0
+# Initialize SPI bus
+spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+# Initialize display
+dc = digitalio.DigitalInOut(board.D23)  # data/command
+cs1 = digitalio.DigitalInOut(board.CE1)  # chip select CE1 for display
+reset = digitalio.DigitalInOut(board.D24)  # reset
+display = adafruit_pcd8544.PCD8544(spi, dc, cs1, reset, baudrate= 1000000)
+display.bias = 4
+display.contrast = 60
+display.invert = True
+#  Clear the display.  Always call show after changing pixels to make the display update visible!
+display.fill(0)
+display.show()
+# Load default font.
+font = ImageFont.load_default()
 
 #verbinden met database
 database = MySQLdb.connect(host="localhost", user="pi", passwd="raspberry", db="parkeergarage")
-
-#database select
 cursor = database.cursor()
 
+# pinnen instellen
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(17, GPIO.OUT)# pin1 voor ultrasoon sensor ingang
 GPIO.setup(27, GPIO.IN)# pin2 voor ultrasoon sensor ingang
@@ -28,27 +48,27 @@ GPIO.setup(14, GPIO.OUT)# pin1 voor ultrasoon sensor uitgang
 GPIO.setup(15, GPIO.IN)# pin2 voor ultrasoon sensor uitgang
 GPIO.setup(18, GPIO.OUT)# led voor parking vol
 GPIO.setup(5, GPIO.OUT)# pin voor slagboom motor
-
-
+GPIO.setup(6, GPIO.IN)#ldr1 --- 6
+GPIO.setup(13, GPIO.IN)#ldr2
+GPIO.setup(12, GPIO.IN)#ldr3
+GPIO.setup(16, GPIO.IN)#ldr3
 
 # slagboom motor instellen
 servo = GPIO.PWM(5, 50)
 servo.start(2.5)
-
 servo.ChangeDutyCycle(11)# slagboom dicht zetten
 
+#variabelen
+nummerplaat = 0
+afstandauto = 15
 legeparkings = 4 # lege parkings bijhouden
 ticketbetaald = 1 # is het parkingticket betaald -> 1
-
-
-#variabelen
-parking1Vol = 0
-parking2Vol = 0
-parking3Vol = 0
-parking4Vol = 0
-afstandauto = 15
-
-
+LDR1 = 6# 6
+LDR2 = 13
+LDR3 = 12
+LDR4 = 16
+key = "bmKBdH"
+message_al_verstuurd = 0
 
 #afstand meten 
 def meetAfstand(inOfUitgang):
@@ -69,7 +89,6 @@ def meetAfstand(inOfUitgang):
     endtime = time.time()
     return round(((endtime - starttime)*17000),0)
 
-# nummerplaat scannen
 # camera nummerplaat herkenning instellen
 cam = cv2.VideoCapture(0)
 
@@ -146,6 +165,7 @@ try:
         #[BUG] alles moet op de pi aangesloten zijn, anders hangt het programma vast bij if(meetAfstand("ingang") < afstandauto):
         #[BUG] kan de nummerplaat waarde niet in de terminal tonen.
         
+        # sensor + slagboom + camera + database
         #ingang parking
         if(meetAfstand("ingang") < afstandauto):# er staat auto ingang
             if(legeparkings > 0):# er is een plaats vrij
@@ -155,13 +175,13 @@ try:
                 nummerplaat=scanNummerplaat()
                 
                 #wegscrhijven naar db
-                cursor.execute("INSERT INTO nrplaat(tijdstip,nummerplaat) VALUE(%s, %s)", (tijdstip,nummerplaat))
+                cursor.execute("INSERT INTO nrplaat(aankomst,nummerplaat) VALUE(%s, %s)", (tijdstip,nummerplaat))
                 database.commit()
                 print('nummerplaat is doorgestuurt naar database, [BUG] kan de nummerplaat waarde niet in de terminal tonen\n')
 
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
-                while (meetAfstand("ingang") < 10 or meetAfstand("uitgang") < 10):# staat de auto er nog ?
+                while (meetAfstand("ingang") < afstandauto or meetAfstand("uitgang") < afstandauto):# staat de auto er nog ?
                     time.sleep(4)
                 servo.ChangeDutyCycle(11)# auto weg -> slagboom dicht
                 print('slagboom dicht')
@@ -187,26 +207,66 @@ try:
             else:# NIET betaald
                 print('Gelieve eerst te betalen en dan naar buiten te rijden.')
 
-        # if(parking1Vol == 1):
-            
-        # else:
-            
-        # if(parking2Vol == 1):
-            
-        # else:
-            
-        # if(parking3Vol == 1):
-            
-        # else:
-            
-        # if(parking4Vol == 1):
-            
-        # else:
-            
+
+        #scherm + LDR
+        image = Image.new('1', (display.width, display.height)) 
+        draw = ImageDraw.Draw(image)
+        
+        # Draw a white filled box to clear the image.
+        draw.rectangle((0, 0, display.width, display.height), outline=255, fill=255)
+        if(legeparkings > 0):
+            draw.text((1,0), 'Welkom', font=font)
+            if (GPIO.input(LDR1)==0):
+                print("1vol")
+                nummerplaat = ''
+                draw.text((1,8), 'P1: bezet'+str(nummerplaat), font=font)
+            else:
+                print("1leeg")
+                draw.text((1,8), 'P1: vrij', font=font)
+            if (GPIO.input(LDR2)==0):
+                print("2vol")
+                nummerplaat = ''
+                draw.text((1,16), 'P2: bezet'+str(nummerplaat), font=font)
+                time.sleep(0.5)
+            else:
+                print("2leeg")
+                draw.text((1,16), 'P2: vrij', font=font)
+                time.sleep(0.5)
+            if (GPIO.input(LDR3)==0):
+                print("3vol")
+                nummerplaat = ''
+                draw.text((1,24), 'P3: bezet'+str(nummerplaat), font=font)
+                time.sleep(0.5)
+            else:
+                print("3leeg")
+                draw.text((1,24), 'P3: vrij', font=font) 
+            if (GPIO.input(LDR4)==0):
+                print("4vol")
+                nummerplaat = ''
+                draw.text((1,32), 'P4: bezet'+str(nummerplaat), font=font)
+            else:
+                print("4leeg")
+                draw.text((1,32), 'P4: vrij', font=font)
+            display.image(image)
+            display.show()
+        else:
+            draw.text((1,0), 'Welkom', font=font)
+            draw.text((1,8), 'Helaas,', font=font)
+            draw.text((1,16), 'de parking', font=font)
+            draw.text((1,24), 'is vol', font=font)
+
+
+        # push bericht versturen
+        # if(GPIO.input(LDR1)==0 and GPIO.input(LDR2)==0 and GPIO.input(LDR3)==0 and GPIO.input(LDR4)==0 and message_al_verstuurd==0):
+        #     send_encrypted(key, "password", "salt", "Parking", "De parking is vol", "event")
+        #     message_al_verstuurd = 1
+
+        # if(GPIO.input(LDR1)==1 or GPIO.input(LDR2)==1 or GPIO.input(LDR3)==1 or GPIO.input(LDR4)==1):
+        #     message_al_verstuurd = 0
+
         time.sleep(1)
         
 except KeyboardInterrupt:# stop programma -> proper afsluiten
-    
     servo.stop()
     GPIO.cleanup()
     cv2.destroyAllWindows()
