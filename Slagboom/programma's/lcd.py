@@ -36,27 +36,27 @@ while True:
     draw.rectangle((0, 0, display.width, display.height), outline=255, fill=255)
     # Write some text.
     nummer=4
-    draw.text((1,0), 'Welkom,', font=font)
+    draw.text((1,0), 'Welkom', font=font)
     if(parking1Vol == 0):
-        draw.text((1,8), 'park1: vrij', font=font)
+        draw.text((1,8), 'P1: vrij', font=font)
     else:
-        nummerplaat = '1ABC123'
-        draw.text((1,8), 'park1: '+str(nummerplaat), font=font)
+        nummerplaat = '1-ABC-123'
+        draw.text((1,8), 'P1: '+str(nummerplaat), font=font)
     if(parking2Vol == 0):
-        draw.text((1,16), 'park2: vrij', font=font)
+        draw.text((1,16), 'P2: vrij', font=font)
     else:
-        nummerplaat = '1ABC123'
-        draw.text((1,16), 'park2: '+str(nummerplaat), font=font)
+        nummerplaat = '1-ABC-123'
+        draw.text((1,16), 'P2: '+str(nummerplaat), font=font)
     if(parking3Vol == 0):
-        draw.text((1,24), 'park3: vrij', font=font)
+        draw.text((1,24), 'P3: vrij', font=font)
     else:
-        nummerplaat = '1ABC123'
-        draw.text((1,24), 'park3: '+str(nummerplaat), font=font)
+        nummerplaat = '1-ABC-123'
+        draw.text((1,24), 'P3: '+str(nummerplaat), font=font)
     if(parking4Vol == 0):
-        draw.text((1,32), 'park4: vrij', font=font)
+        draw.text((1,32), 'P4: vrij', font=font)
     else:
-        nummerplaat = '1ABC123'
-        draw.text((1,32), 'park4: '+str(nummerplaat), font=font)
+        nummerplaat = '1-ABC-123'
+        draw.text((1,32), 'P4: '+str(nummerplaat), font=font)
     display.image(image)
     display.show()
     time.sleep(1)

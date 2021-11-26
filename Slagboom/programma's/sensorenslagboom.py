@@ -7,10 +7,6 @@ GPIO.setup(17, GPIO.OUT)# pin1 voor ultrasoon sensor ingang
 GPIO.setup(27, GPIO.IN)# pin2 voor ultrasoon sensor ingang
 GPIO.setup(14, GPIO.OUT)# pin1 voor ultrasoon sensor uitgang
 GPIO.setup(15, GPIO.IN)# pin2 voor ultrasoon sensor uitgang
-GPIO.setup(23, GPIO.OUT)# led voor parking 1 bezet 
-GPIO.setup(24, GPIO.OUT)# led voor parking 2 bezet 
-GPIO.setup(25, GPIO.OUT)# led voor parking 3 bezet 
-GPIO.setup(16, GPIO.OUT)# led voor parking 4 bezet 
 GPIO.setup(18, GPIO.OUT)# led voor parking vol
 GPIO.setup(5, GPIO.OUT)# pin voor slagboom motor
 
@@ -22,11 +18,6 @@ servo.ChangeDutyCycle(11)# slagboom dicht zetten
 
 legeparkings = 4 # lege parkings bijhouden
 ticketbetaald = 1 # is het parkingticket betaald -> 1
-
-parking1Vol = 0
-parking2Vol = 0
-parking3Vol = 0
-parking4Vol = 0
 
 #afstand meten 
 def meetAfstand(inOfUitgang):
@@ -78,23 +69,6 @@ try:
                     legeparkings += 1# auto naar buiten -> parkings vrij +1
             else:# NIET betaald
                 print('Gelieve eerst te betalen en dan naar buiten te rijden.')
-
-        if(parking1Vol == 1):
-            GPIO.output(23, 1)
-        else:
-            GPIO.output(23, 0)
-        if(parking2Vol == 1):
-            GPIO.output(24, 1)
-        else:
-            GPIO.output(24, 0)
-        if(parking3Vol == 1):
-            GPIO.output(25, 1)
-        else:
-            GPIO.output(25, 0)
-        if(parking4Vol == 1):
-            GPIO.output(16, 1)
-        else:
-            GPIO.output(16, 0)
         time.sleep(1)
         
 except KeyboardInterrupt:# stop programma -> proper afsluiten
