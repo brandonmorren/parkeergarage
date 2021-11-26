@@ -4,7 +4,7 @@ server with default setting (user 'root' with no password) */
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'pi');
 define('DB_PASSWORD', 'raspberry');
-define('DB_NAME', 'parkingapp');
+define('DB_NAME', 'parkeergarage');
  
 /* Attempt to connect to MySQL database */
 $link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
