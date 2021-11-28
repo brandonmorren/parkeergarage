@@ -59,16 +59,19 @@ servo.start(2.5)
 servo.ChangeDutyCycle(11)# slagboom dicht zetten
 
 #variabelen
-nummerplaat = 0
+nummerplaat = ""
 afstandauto = 15
 legeparkings = 4 # lege parkings bijhouden
-ticketbetaald = 1 # is het parkingticket betaald -> 1
 LDR1 = 6# 6
 LDR2 = 13
 LDR3 = 12
 LDR4 = 16
 key = "bmKBdH"
 message_al_verstuurd = 0
+P1Nummerplaat = ""
+P2Nummerplaat = ""
+P3Nummerplaat = ""
+P4Nummerplaat = ""
 
 #afstand meten 
 def meetAfstand(inOfUitgang):
@@ -173,6 +176,7 @@ try:
                 
                 #scan nummerplaat
                 nummerplaat=scanNummerplaat()
+                print(nummerplaat)
                 
                 #wegscrhijven naar db
                 cursor.execute("INSERT INTO nrplaat(aankomst,nummerplaat) VALUE(%s, %s)", (tijdstip,nummerplaat))
@@ -182,7 +186,7 @@ try:
                 servo.ChangeDutyCycle(6.5)# slagboom open
                 print('slagboom open')
                 while (meetAfstand("ingang") < afstandauto or meetAfstand("uitgang") < afstandauto):# staat de auto er nog ?
-                    time.sleep(4)
+                    time.sleep(3)
                 servo.ChangeDutyCycle(11)# auto weg -> slagboom dicht
                 print('slagboom dicht')
                 legeparkings -= 1# auto naar binnen -> parkings vrij -1
@@ -194,18 +198,14 @@ try:
         
         #uitgang parking
         if(meetAfstand("uitgang") < afstandauto):# auto aan uitgang
-            print(scanNummerplaat())# nummerplaat scannen
-            if(ticketbetaald == 1):# hij heeft betaald
-                servo.ChangeDutyCycle(6.5)# slagboom open
-                print('slagboom open')
-                while (meetAfstand("uitgang") < afstandauto or meetAfstand("ingang") < afstandauto):# staat de auto er nog ?
-                    time.sleep(4)
-                servo.ChangeDutyCycle(11)# auto weg -> slagboom dicht
-                print('slagboom dicht')
-                if(legeparkings < 4):
-                    legeparkings += 1# auto naar buiten -> parkings vrij +1
-            else:# NIET betaald
-                print('Gelieve eerst te betalen en dan naar buiten te rijden.')
+            servo.ChangeDutyCycle(6.5)# slagboom open
+            print('slagboom open')
+            while (meetAfstand("uitgang") < afstandauto or meetAfstand("ingang") < afstandauto):# staat de auto er nog ?
+                time.sleep(3)
+            servo.ChangeDutyCycle(11)# auto weg -> slagboom dicht
+            print('slagboom dicht')
+            if(legeparkings < 4):
+                legeparkings += 1# auto naar buiten -> parkings vrij +1
 
 
         #scherm + LDR
@@ -214,55 +214,54 @@ try:
         
         # Draw a white filled box to clear the image.
         draw.rectangle((0, 0, display.width, display.height), outline=255, fill=255)
-        if(legeparkings > 0):
-            draw.text((1,0), 'Welkom', font=font)
-            if (GPIO.input(LDR1)==0):
-                print("1vol")
-                nummerplaat = ''
-                draw.text((1,8), 'P1: bezet'+str(nummerplaat), font=font)
-            else:
-                print("1leeg")
-                draw.text((1,8), 'P1: vrij', font=font)
-            if (GPIO.input(LDR2)==0):
-                print("2vol")
-                nummerplaat = ''
-                draw.text((1,16), 'P2: bezet'+str(nummerplaat), font=font)
-                time.sleep(0.5)
-            else:
-                print("2leeg")
-                draw.text((1,16), 'P2: vrij', font=font)
-                time.sleep(0.5)
-            if (GPIO.input(LDR3)==0):
-                print("3vol")
-                nummerplaat = ''
-                draw.text((1,24), 'P3: bezet'+str(nummerplaat), font=font)
-                time.sleep(0.5)
-            else:
-                print("3leeg")
-                draw.text((1,24), 'P3: vrij', font=font) 
-            if (GPIO.input(LDR4)==0):
-                print("4vol")
-                nummerplaat = ''
-                draw.text((1,32), 'P4: bezet'+str(nummerplaat), font=font)
-            else:
-                print("4leeg")
-                draw.text((1,32), 'P4: vrij', font=font)
-            display.image(image)
-            display.show()
+        draw.text((1,0), 'Welkom', font=font)
+        if (GPIO.input(LDR1)==0):
+            if(P1Nummerplaat == ""):
+                P1Nummerplaat = nummerplaat
+            draw.text((1,8), 'P1: t'+str(P1Nummerplaat), font=font)
+            print("1vol")
         else:
-            draw.text((1,0), 'Welkom', font=font)
-            draw.text((1,8), 'Helaas,', font=font)
-            draw.text((1,16), 'de parking', font=font)
-            draw.text((1,24), 'is vol', font=font)
+            print("1leeg")
+            draw.text((1,8), 'P1: vrij', font=font)
+            P1Nummerplaat = ""
+        if (GPIO.input(LDR2)==0):
+            if(P2Nummerplaat == ""):
+                P2Nummerplaat = nummerplaat
+            draw.text((1,16), 'P2: t'+str(P2Nummerplaat), font=font)
+            print("2vol")
+        else:
+            print("2leeg")
+            draw.text((1,16), 'P2: vrij', font=font)
+            P2Nummerplaat = ""
+        if (GPIO.input(LDR3)==0):
+            if(P3Nummerplaat == ""):
+                P3Nummerplaat = nummerplaat
+            draw.text((1,24), 'P3: t'+str(P1Nummerplaat), font=font)
+            print("3vol")
+        else:
+            print("3leeg")
+            draw.text((1,24), 'P3: vrij', font=font)
+            P3Nummerplaat = ""
+        if (GPIO.input(LDR4)==0):
+            if(P4Nummerplaat == ""):
+                P4Nummerplaat = nummerplaat
+            draw.text((1,32), 'P4: t'+str(P4Nummerplaat), font=font)
+            print("4vol")
+        else:
+            print("4leeg")
+            draw.text((1,32), 'P4: vrij', font=font)
+            P4Nummerplaat = ""
+        display.image(image)
+        display.show()
 
 
-        # push bericht versturen
-        # if(GPIO.input(LDR1)==0 and GPIO.input(LDR2)==0 and GPIO.input(LDR3)==0 and GPIO.input(LDR4)==0 and message_al_verstuurd==0):
-        #     send_encrypted(key, "password", "salt", "Parking", "De parking is vol", "event")
-        #     message_al_verstuurd = 1
+        #push bericht versturen
+        if(GPIO.input(LDR1)==0 and GPIO.input(LDR2)==0 and GPIO.input(LDR3)==0 and GPIO.input(LDR4)==0 and message_al_verstuurd==0):
+            send_encrypted(key, "password", "salt", "Parking", "De parking is vol", "event")
+            message_al_verstuurd = 1
 
-        # if(GPIO.input(LDR1)==1 or GPIO.input(LDR2)==1 or GPIO.input(LDR3)==1 or GPIO.input(LDR4)==1):
-        #     message_al_verstuurd = 0
+        if(GPIO.input(LDR1)==1 or GPIO.input(LDR2)==1 or GPIO.input(LDR3)==1 or GPIO.input(LDR4)==1):
+            message_al_verstuurd = 0
 
         time.sleep(1)
         
