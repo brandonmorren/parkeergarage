@@ -3,8 +3,8 @@
 require_once "config.php";
  
 // Define variables and initialize with empty values
-$username = $password = $confirm_password = $license = "";
-$username_err = $password_err = $confirm_password_err = $license_err = "";
+$username = $password = $confirm_password = "";
+$username_err = $password_err = $confirm_password_err = "";
  
 // Processing form data when form is submitted
 if($_SERVER["REQUEST_METHOD"] == "POST"){
@@ -37,6 +37,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 }
             } else{
                 echo "Oops! Something went wrong. Please try again later.";
+                echo "ERROR: Could not able to execute $sql. " . mysqli_error($link);
             }
 
             // Close statement
@@ -62,7 +63,6 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             $confirm_password_err = "Password did not match.";
         }
     }
-
     
     // Check input errors before inserting in database
     if(empty($username_err) && empty($password_err) && empty($confirm_password_err)){
@@ -81,9 +81,10 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
             // Attempt to execute the prepared statement
             if(mysqli_stmt_execute($stmt)){
                 // Redirect to login page
-                header("location: login.php");
+                header("location: index.php");
             } else{
                 echo "Oops! Something went wrong. Please try again later.";
+                echo "ERROR: Could not able to execute $sql. " . mysqli_error($link);
             }
 
             // Close statement
@@ -131,7 +132,7 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
                 <input type="submit" class="btn btn-primary" value="Submit">
                 <input type="reset" class="btn btn-secondary ml-2" value="Reset">
             </div>
-            <p>Already have an account? <a href="login.php">Login here</a>.</p>
+            <p>Already have an account? <a href="index.php">Login here</a>.</p>
         </form>
     </div>    
 </body>

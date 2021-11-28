@@ -40,64 +40,148 @@ if ($link->connect_error) {
 ?>
 
 
-<h3>Available parking spots: </h2>
 
-
-<!-- import mysql.connector
-
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="yourusername",
-  password="yourpassword",
-  database="mydatabase"
-)
-
-mycursor = mydb.cursor()
-
-mycursor.execute("SELECT * FROM customers")
-
-myresult = mycursor.fetchall()
-
-for x in myresult:
-  print(x) -->
-
-
-<?php
-
-$query2 = mysqli_query($link, "SELECT COUNT(license) FROM users")
-   or die (mysqli_error($link));
-
-while ($row2 = mysqli_fetch_array($query2)) {
-    echo "Total parking spots: " . $row2[0] . " / 4 are taken.";
-
-}
-?>
 
 <table border="1" align="center">
-    <h2>Your personal information: </h2>
+  <h3>Available parking spots: </h2>
 <tr>
-  <td>Username</td>
-  <td>License plate</td>
-  <td>Created at</td>
+  <td>Parkingspot</td>
+  <td>Status</td>
+  <td>Bezet / beschikbaar sinds</td>
 </tr>
 
 
+
 <?php
 
-$query = mysqli_query($link, "SELECT * FROM users WHERE username='".$_SESSION["username"]."'")
+$query2 = mysqli_query($link, "SELECT * from parkingspot")
    or die (mysqli_error($link));
 
-while ($row = mysqli_fetch_array($query)) {
+while ($row2 = mysqli_fetch_array($query2)) {
   echo
-   "<tr>
-    <td>{$row['username']}</td>
-    <td>{$row['license']}</td>
-    <td>{$row['created_at']}</td>
-   </tr>\n";
+  "<tr>
+   <td>{$row2['parkingspot']}</td>
+   <td>{$row2['status']}</td>
+   <td>{$row2['aankomst']}</td>
+  </tr>\n";
+
+}
+?>
+
+
+<div>
+    <table border="1" align="center">
+        <h2>Your personal information: </h2>
+    <tr>
+        <td>voornaam</td>
+        <td>achternaa'</td>
+        <td>straat_huisnummer</td>
+        <td>gemeente_postcode</td>
+        <td>bank</td>
+        <td>nummerplaat</td>
+        <td>parkingspot</td>
+        <td>aankomst</td>
+        <td>vertrek</td>
+        <td>tebetalen</td>
+    </tr>
+  </div>
+
+
+
+<?php
+
+if ($_SESSION["username"] != "admin") {
+
+  $query = mysqli_query($link, "SELECT * FROM nrplaat WHERE username='".$_SESSION["username"]."'")
+    or die (mysqli_error($link));
+
+  while ($row = mysqli_fetch_array($query)) {
+    echo
+    "<tr>
+      <td>{$row['voornaam']}</td>
+      <td>{$row['achternaam']}</td>
+      <td>{$row['straat_huisnummer']}</td>
+      <td>{$row['gemeente_postcode']}</td>
+      <td>{$row['bank']}</td>
+      <td>{$row['nummerplaat']}</td>
+      <td>{$row['parkingspot']}</td>
+      <td>{$row['aankomst']}</td>
+      <td>{$row['vertrek']}</td>
+      <td>{$row['tebetalen']}</td>
+    </tr>\n";
+  }
 
 }
 
+
+
+if ($_SESSION["username"] == "admin") {
+
+  $query = mysqli_query($link, "SELECT * FROM nrplaat")
+  or die (mysqli_error($link));
+
+    while ($row = mysqli_fetch_array($query)) {
+    echo
+      "<tr>
+      <td>{$row['voornaam']}</td>
+      <td>{$row['achternaam']}</td>
+      <td>{$row['straat_huisnummer']}</td>
+      <td>{$row['gemeente_postcode']}</td>
+      <td>{$row['bank']}</td>
+      <td>{$row['nummerplaat']}</td>
+      <td>{$row['parkingspot']}</td>
+      <td>{$row['aankomst']}</td>
+      <td>{$row['vertrek']}</td>
+      <td>{$row['tebetalen']}</td>
+      </tr>\n";
+    }
+
+}  
+
 ?>
+
+<?php if ($_SESSION["username"] == "admin") { ?>
+
+<div>
+    <table border="1" align="center">
+    <h2>User information</h2>
+    <tr>
+    <td>id</td>
+    <td>username</td>
+    <td>password</td>
+    <td>created at</td>
+
+    </tr>
+  </div>
+
+<?php } ?>
+
+
+<?php
+
+if ($_SESSION["username"] == "admin") {
+
+
+  $query3 = mysqli_query($link, "SELECT * FROM users")
+   or die (mysqli_error($link));
+
+  while ($row3 = mysqli_fetch_array($query3)) {
+    echo
+    "<tr>
+      <td>{$row3['id']}</td>
+      <td>{$row3['username']}</td>
+      <td>{$row3['password']}</td>
+      <td>{$row3['created_at']}</td>
+    </tr>\n";
+
+  }
+  
+}
+
+
+?>
+
+
 
 </body>
 </html>
