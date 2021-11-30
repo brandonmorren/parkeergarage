@@ -107,3 +107,6 @@ except ValueError:
 
 cursor.execute("UPDATE nrplaat SET tebetalen=%s  WHERE nummerplaat=%s", (tebetalen, nummerplaat))
 database.commit()
+
+# key = "bmKBdH"
+# send(key, "parking", "Deze parking is vol.", "parking")
